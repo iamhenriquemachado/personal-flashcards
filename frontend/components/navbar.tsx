@@ -56,6 +56,16 @@ export function Navbar() {
                 Create
               </Button>
             </Link>
+            <Link href="/cards">
+              <Button
+                variant={pathname === "/cards" ? "default" : "ghost"}
+                size="sm"
+                className={pathname === "/cards" ? "bg-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.9)]" : ""}
+              >
+                Flashcards
+              </Button>
+            </Link>
+            
           </nav>
 
           <Button

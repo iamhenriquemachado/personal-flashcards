@@ -7,3 +7,4 @@ class FlashCards(BaseModel):
     explanation: Optional[str] = Field(None, max_length=2000, description="Optional explanation")
     code: Optional[str] = Field(None, max_length=5000, description="Optional code snippet")
     category: str = Field(..., min_length=3, max_length=50, description="Category of the flashcard")
+    progress: Optional[int] = Field(None, description="Progress of the flashcard")

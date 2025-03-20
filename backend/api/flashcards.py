@@ -5,15 +5,11 @@ from models.model import FlashCards
 from datetime import datetime, timezone
 import html
 
-
+# Setup logger and router
 router = APIRouter()
-
-# Setup logger
 logger = logging.getLogger("uvicorn")
 
-
-
-# Get all flashcards in the database 
+# Get All Flashcards
 @router.get('/flashcards')
 async def get_flashcards():
     try:
@@ -26,7 +22,7 @@ async def get_flashcards():
         logger.error(f"Error retrieving flashcards: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve flashcards: {str(e)}")
     
-# Craete a new flashcard in the database
+# Craete Flashcard
 @router.post("/flashcards/create")
 async def create_flashcards(flashcard_data: FlashCards):
     try:
@@ -56,7 +52,7 @@ async def create_flashcards(flashcard_data: FlashCards):
             raise HTTPException(status_code=500, detail=f"Failed to insert new flashcard: {str(e)}")
 
  
-# Update a existing flashcard
+# Update Flashcard
 @router.patch("/flashcards/update/{id}")
 async def update_flashcard(id: int, flashcard_data: FlashCards):
      try:
@@ -77,3 +73,58 @@ async def update_flashcard(id: int, flashcard_data: FlashCards):
      except Exception as e:
             logger.error(f"Error retrie ving flashcards: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to update the flashcard: {str(e)}")
+
+# Delete Flashcard
+@router.delete("/flashcards/delete/{id}")
+async def delete_flashcard(id: int):
+        try:
+            # Check if a flashcard exists in the database
+            existing_flashcard = (supabase.table("flashcards").select("id").eq("id", id).execute())    
+            if not existing_flashcard.data:  
+                raise HTTPException(status_code=400, detail="Flashcard does not exist")
+
+            # Delete a flashcard 
+            response = supabase.table("flashcards").delete().eq("id", id).execute()
+            
+            return {
+                "message": "Flashcard deleted sucessfully in the database", 
+                "flashcard": response.data
+            }
+          
+        except Exception as e:
+            logger.error(f"Error deleting flashcards: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to delete the flashcard: {str(e)}")
+        
+
+@router.patch("/flashcards/progress/{id}")
+async def flashcard_progress(id: int, flashcard_data: FlashCards):
+    try:
+    # Check if a flashcard exists in the database
+        existing_flashcard = (supabase.table("flashcards").select("id").eq("id", id).execute())    
+        if not existing_flashcard.data:  
+            raise HTTPException(status_code=400, detail="Flashcard does not exist")
+        
+        response = (
+            supabase.table("flashcards")
+            .update({"progress": flashcard_data.progress})
+            .eq("id", id)
+            .execute()
+        )
+        
+        return {"message": "Progress updated", "flashcard": response.data}
+
+    except Exception as e:
+        logger.error(f"Error updating flashcard progress: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update the flashcard: {str(e)}")
+
+# Get Progress For All Flashcards
+@router.get('/flashcards/progress')
+async def get_flashcards():
+    try:
+        response = supabase.table("flashcards").select("question", "progress").execute()
+        return {
+            "response": response.data
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving flashcards: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve flashcards: {str(e)}")
