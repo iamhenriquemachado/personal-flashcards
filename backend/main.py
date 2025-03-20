@@ -4,14 +4,14 @@ from api import flashcards
 app = FastAPI()
 router = APIRouter()
 
+app.include_router(flashcards.router, prefix="/api", tags=["api"])
+
 # Test server
-@app.get("/")
+@router.get("/")
 def server_running():
     return {"Message": "Server is running ✨"}
-
-app.include_router(flashcards.router, prefix="/flashcards", tags=["flashcards"])
 
 # Start server
 if __name__ == "__main__":
     import uvicorn 
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True) 
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 
