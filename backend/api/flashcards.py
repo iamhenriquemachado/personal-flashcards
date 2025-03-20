@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
 import logging
-import json
-from db.database import supabase, url, key
+from db.database import supabase
+from models.model import FlashCards
+from datetime import datetime, timezone
+import html
 
 
 router = APIRouter()
@@ -10,12 +12,9 @@ router = APIRouter()
 logger = logging.getLogger("uvicorn")
 
 
-# Creates a new flashcard
-router.post("/")
-async def create_flashcard():
-    pass 
 
-@router.get('/get')
+# Get all flashcards in the database 
+@router.get('/flashcards')
 async def get_flashcards():
     try:
         response = supabase.table("flashcards").select("*").execute()
@@ -26,58 +25,55 @@ async def get_flashcards():
     except Exception as e:
         logger.error(f"Error retrieving flashcards: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve flashcards: {str(e)}")
+    
+# Craete a new flashcard in the database
+@router.post("/flashcards/create")
+async def create_flashcards(flashcard_data: FlashCards):
+    try:
+            # Protects against SQL Injection and XSS Attacks
+            flashcard_data.question = html.escape(flashcard_data.question)
+            flashcard_data.answer = html.escape(flashcard_data.answer)
+            flashcard_data.explanation = html.escape(flashcard_data.explanation or "")
+            flashcard_data.code = html.escape(flashcard_data.code or "")
+
+
+            created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            flashcard_dict = flashcard_data.model_dump()
+            flashcard_dict["created_at"] = created_at
+            
+            
+            # Validate allowed categories
+            ALLOWED_CATEGORIES = {"general", "coding"}
+            if flashcard_data.category.lower() not in ALLOWED_CATEGORIES:
+                 raise HTTPException(status_code=400, detail="Invalid category")
+
+            # Return the response with the flashcard created 
+            response = supabase.table("flashcards").insert(flashcard_dict).execute()
+            return { "flashcard": response.data }
+    
+    except Exception as e:
+            logger.error(f"Error retrieving flashcards: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to insert new flashcard: {str(e)}")
+
  
+# Update a existing flashcard
+@router.patch("/flashcards/update/{id}")
+async def update_flashcard(id: int, flashcard_data: FlashCards):
+     try:
+          # Check if a flashcard exists in the database
+          existing_flashcard = (supabase.table("flashcards").select("id").eq("id", id).execute())    
+          if not existing_flashcard.data:  
+            raise HTTPException(status_code=400, detail="Flashcard does not exist")
 
-@router.get('/connection-test')
-async def connection_test():
-    from db.database import url, key
-    
-    # Import the libraries directly in this function to ensure we're using the same versions
-    import os
-    from supabase import create_client
-    
-    try:
-        # Create a fresh client
-        test_client = create_client(url, key)
-        
-        # Try a simple query
-        test_query = test_client.table("flashcards").select("*").execute()
-        
-        return {
-            "connection_status": "successful",
-            "url_prefix": url[:10] + "..." if url else "Not set",
-            "key_length": len(key) if key else "Not set",
-            "data_count": len(test_query.data) if test_query.data else 0
-        }
-    except Exception as e:
-        return {"error": str(e)}
-    
-
-@router.post('/insert-test')
-async def insert_test():
-    try:
-        # Create a test flashcard
-        test_data = {
-            "created_at": "now()", 
-            "question": "Test question",
-            "answer": "Test answer",
-            "explanation": "Test explanation", 
-            "code": "Test code", 
-            "category": "test"
-             # Use Supabase's now() function
-        }
-        
-        # Insert the test data
-        insert_response = supabase.table("flashcards").insert(test_data).execute()
-        
-        # Fetch right after inserting
-        fetch_response = supabase.table("flashcards").select("*").execute()
-        
-        return {
-            "insert_status": "success" if insert_response.data else "failed",
-            "inserted_data": insert_response.data,
-            "fetch_after_insert": fetch_response.data,
-            "count_after_insert": len(fetch_response.data) if fetch_response.data else 0
-        }
-    except Exception as e:
-        return {"error": str(e)}
+          # Update the new flashcard
+          flashcard_dict = flashcard_data.model_dump()
+          response = supabase.table("flashcards").update(flashcard_dict).eq("id", id).execute()
+          
+          return {
+               "message": "Flashcard updated sucessfully in the database", 
+               "flashcard": response.data
+          }
+          
+     except Exception as e:
+            logger.error(f"Error retrie ving flashcards: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to update the flashcard: {str(e)}")
