@@ -1,6 +1,6 @@
 import { FlashCard } from "./types"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://0.0.0.0:8000/api/flashcards"
 
 /**
  * Fetch all flash cards for a specific category
@@ -17,6 +17,26 @@ export async function fetchFlashCards(category: string): Promise<FlashCard[]> {
   } catch (error) {
     console.error("Failed to fetch flash cards:", error)
     return []
+  }
+}
+
+/**
+ * Fetch all flashcards (without category filtering)
+ */
+export async function fetchAllFlashCards() {
+  try {
+    const response = await fetch('http://localhost:8000/api/flashcards');
+    if (!response.ok) {
+      throw new Error(`Error fetching all flash cards: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    // Return the raw response to handle both possible formats
+    // (either { response: [...] } or direct array)
+    return data;
+  } catch (error) {
+    console.error("Failed to fetch all flash cards:", error);
+    return { response: [] }; // Return in a consistent format for error handling
   }
 }
 
