@@ -14,14 +14,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-
-
 app.include_router(flashcards.router, prefix="/api", tags=["api"])
-
-# Test server
-@router.get("/")
-def server_running():
-    return {"Message": "Server is running ✨"}
 
 # Start server
 if __name__ == "__main__":

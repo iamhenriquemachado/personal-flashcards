@@ -1,30 +1,59 @@
-import { notFound } from "next/navigation"
-import FlashCardReview from "@/components/flash-card-review"
-import { getFlashCards } from "@/lib/data"
-import { FlashCard } from "@/lib/types" // Make sure to import the FlashCard type if needed
+import { notFound } from "next/navigation";
+import FlashCardReview from "@/components/flash-card-review";
+import { fetchFlashCards } from "@/lib/api";
+import { FlashCard } from "@/lib/types";
 
-export default async function CategoryPage({ params }: { params?: { category?: string } }) {
-  if (!params?.category) {
-    notFound()
+interface CategoryPageProps {
+  params?: { category?: string };
+}
+
+export default async function CategoryPage({ params }: CategoryPageProps) {
+  // Ensure params exists before accessing category
+  if (!params || !params.category) {
+    return notFound();
   }
 
-  const category = params.category
-  if (category !== "general" && category !== "coding") {
-    notFound()
+  const category = params.category.toLowerCase(); // Normalize to lowercase
+
+  // Validate category
+  const validCategories = ["general", "coding"];
+  if (!validCategories.includes(category)) {
+    return notFound();
   }
 
-  const flashCards = await getFlashCards(category)
-  
-  // If the error is happening here, the component isn't accepting these props
-  return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">
-        {category === "general" ? "General Knowledge" : "Coding"} Flash Cards
-      </h1>
-      <FlashCardReview 
-        flashCards={flashCards} 
-        category={category} 
-      />
-    </div>
-  )
+  try {
+    const flashCards: FlashCard[] = await fetchFlashCards(category);
+
+    if (!flashCards || flashCards.length === 0) {
+      return (
+        <div className="container mx-auto py-8">
+          <h1 className="text-2xl font-bold mb-6">
+            {category === "general" ? "General Knowledge" : "Coding"} Flash Cards
+          </h1>
+          <div className="text-center p-8 text-gray-500">
+            No flashcards found for this category. Try again later.
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-6">
+          {category === "general" ? "General Knowledge" : "Coding"} Flash Cards
+        </h1>
+        <FlashCardReview flashCards={flashCards} category={category} />
+      </div>
+    );
+  } catch (error) {
+    console.error("Error fetching flashcards:", error);
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-6">Error Loading Flash Cards</h1>
+        <div className="text-center p-8 text-red-500">
+          Failed to fetch flashcards. Please try again later.
+        </div>
+      </div>
+    );
+  }
 }

@@ -9,6 +9,11 @@ import html
 router = APIRouter()
 logger = logging.getLogger("uvicorn")
 
+# Test server
+@router.get("/")
+def server_running():
+    return {"Message": "Server is running ✨"}
+
 # Get All Flashcards
 @router.get('/flashcards')
 async def get_flashcards():
@@ -127,4 +132,15 @@ async def get_flashcards():
         }
     except Exception as e:
         logger.error(f"Error retrieving flashcards: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve flashcards: {str(e)}")
+    
+
+# Get Flashcards By Category
+@router.get('/flashcards/category/{category}')
+async def get_flashcards_by_category(category: str):
+    try:
+        response = supabase.table("flashcards").select("*").eq("category", category).execute()
+        return response.data
+    except Exception as e:
+        logger.error(f"Error retrieving flashcards for category {category}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve flashcards: {str(e)}")

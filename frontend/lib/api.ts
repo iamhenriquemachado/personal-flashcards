@@ -1,21 +1,47 @@
-import { FlashCard } from "./types"
+import type { FlashCard } from "./types"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://0.0.0.0:8000/api/flashcards"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 /**
  * Fetch all flash cards for a specific category
  */
 export async function fetchFlashCards(category: string): Promise<FlashCard[]> {
   try {
-    const response = await fetch(`${API_URL}/flashcards?category=${category}`)
-    
+    // Normalize category for consistency
+    const normalizedCategory = category.toLowerCase()
+
+    // Log category and URL for debugging
+    const url = `${API_URL}/api/flashcards/category/${normalizedCategory}`
+    console.log(`Fetching flash cards for category: ${normalizedCategory}`)
+    console.log(`Request URL: ${url}`)
+
+    // Make the request with cache control
+    const response = await fetch(url, {
+      cache: "no-store",
+    })
+
     if (!response.ok) {
       throw new Error(`Error fetching flash cards: ${response.statusText}`)
     }
-    
-    return await response.json()
+
+    const data = await response.json()
+
+    // Log the response data for debugging
+    console.log(`Received data:`, data)
+
+    // Handle both potential response formats (array or {response: array})
+    const cards = Array.isArray(data) ? data : data.response || []
+
+    if (!Array.isArray(cards)) {
+      console.error(`Unexpected response format:`, data)
+      return []
+    }
+
+    // Return the cards without additional filtering
+    // The API should already be filtering by category
+    return cards
   } catch (error) {
-    console.error("Failed to fetch flash cards:", error)
+    console.error("Error fetching flashcards:", error)
     return []
   }
 }
@@ -159,3 +185,61 @@ export async function getUserProgress(): Promise<Record<string, number>> {
     return {}
   }
 }
+
+// Add a new function to directly fetch by category with a different approach
+export async function fetchFlashCardsByCategory(category: "general" | "coding"): Promise<FlashCard[]> {
+  try {
+    // Log the exact category being requested
+    console.log(`🔍 fetchFlashCardsByCategory called with category: "${category}"`)
+
+    // Fetch all cards first
+    const response = await fetch(`${API_URL}/api/flashcards`, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error fetching all flash cards: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    const allCards = Array.isArray(data) ? data : data.response || []
+
+    console.log(`📊 Total cards fetched: ${allCards.length}`)
+
+    // Filter by category with explicit type annotation
+    const filteredCards = allCards.filter((card: any) => {
+      // Add extra logging to debug category issues
+      if (typeof card.category !== "string") {
+        console.warn("⚠️ Card with invalid category:", card)
+        return false
+      }
+
+      const cardCategory = card.category.toLowerCase()
+      const targetCategory = category.toLowerCase()
+
+      // Check for exact match with the requested category
+      const isMatch = cardCategory === targetCategory
+
+      // For coding cards, also include subcategories like "algorithms" or "data structures"
+      const isCodingSubcategory =
+        targetCategory === "coding" && ["algorithms", "data structures", "programming", "coding"].includes(cardCategory)
+
+      console.log(
+        `🔍 Card: "${cardCategory}" vs Target: "${targetCategory}" => Match: ${isMatch || isCodingSubcategory}`,
+      )
+
+      return isMatch || isCodingSubcategory
+    })
+
+    console.log(`✅ Filtered ${filteredCards.length} "${category}" cards from ${allCards.length} total cards`)
+
+    return filteredCards as FlashCard[]
+  } catch (error) {
+    console.error("❌ Error in fetchFlashCardsByCategory:", error)
+    return []
+  }
+}
+
