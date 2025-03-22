@@ -71,7 +71,7 @@ export async function fetchAllFlashCards() {
  */
 export async function createFlashCard(flashCard: Omit<FlashCard, "id">): Promise<FlashCard | null> {
   try {
-    const response = await fetch(`${API_URL}/flashcards`, {
+    const response = await fetch(`${API_URL}/api/flashcards/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

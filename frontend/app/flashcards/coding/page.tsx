@@ -10,16 +10,16 @@ import CategorySelector from "@/components/category-selector"
 export default function FlashCardsPage() {
   // Get the current pathname directly
   const pathname = usePathname()
-
+  
   // Extract category directly from the pathname
   const categoryFromPath = pathname.includes("/coding") ? "coding" : "general"
-
+  
   console.log(`🔍 Direct path check: "${pathname}" => category: "${categoryFromPath}"`)
-
+  
   const [flashCards, setFlashCards] = useState<FlashCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+  
   useEffect(() => {
     const loadFlashCards = async () => {
       setLoading(true)
@@ -37,37 +37,38 @@ export default function FlashCardsPage() {
         setLoading(false)
       }
     }
-
+    
     loadFlashCards()
   }, [categoryFromPath])
-
+  
   if (loading)
     return (
-      <div className="container mx-auto p-8">
-        <CategorySelector currentCategory={categoryFromPath as "coding" | "general"} />
-        <div className="text-center">
+      <div className="container mx-auto py-8 text-center">
+        <div className="animate-pulse">
           Loading {categoryFromPath === "general" ? "General Knowledge" : "Coding"} flashcards...
         </div>
       </div>
     )
-
+  
   if (error)
     return (
-      <div className="container mx-auto p-8">
-        <CategorySelector currentCategory={categoryFromPath as "coding" | "general"} />
-        <div className="text-center text-red-500">{error}</div>
+      <div className="container mx-auto py-8">
+        <div className="bg-red-50 border border-red-200 p-4 rounded-md">
+          {error}
+        </div>
       </div>
     )
-
+  
   return (
-    <div className="container mx-auto">
-      <CategorySelector currentCategory={categoryFromPath as "coding" | "general"} />
+    <div className="container mx-auto py-8">
+      <CategorySelector currentCategory={categoryFromPath} />
       {flashCards.length === 0 ? (
-        <div className="text-center p-8">No flashcards found for {categoryFromPath} category.</div>
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md mt-4">
+          No flashcards found for {categoryFromPath} category.
+        </div>
       ) : (
         <FlashCardReview flashCards={flashCards} category={categoryFromPath} />
       )}
     </div>
   )
 }
-

@@ -12,15 +12,42 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
+import { createFlashCard } from "@/lib/api" // Import the API function
+
+// Define the proper type for FlashCard
+type FlashCardCategory = "general" | "coding";
+
+// Type that matches the backend model
+type FlashCardAPI = {
+  id?: string;
+  question: string;
+  answer: string;
+  explanation?: string | undefined;
+  code?: string | undefined;
+  category: FlashCardCategory;
+  progress?: number | undefined;
+}
+
+// Type for form data - using empty strings for React form handling
+type FlashCardFormData = {
+  question: string;
+  answer: string;
+  explanation: string;
+  code: string;
+  category: FlashCardCategory;
+  progress: number;
+}
 
 export default function CreatePage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formData, setFormData] = useState<FlashCardFormData>({
     question: "",
     answer: "",
     explanation: "",
     code: "",
     category: "general",
+    progress: 0,
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -32,14 +59,16 @@ export default function CreatePage() {
   }
 
   const handleCategoryChange = (value: string) => {
+    // Cast the value to FlashCardCategory since we know it's constrained by the RadioGroup
     setFormData((prev) => ({
       ...prev,
-      category: value,
+      category: value as FlashCardCategory,
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
 
     // Validate form
     if (!formData.question.trim() || !formData.answer.trim()) {
@@ -48,26 +77,57 @@ export default function CreatePage() {
         description: "Question and answer are required",
         variant: "destructive",
       })
+      setIsSubmitting(false)
       return
     }
 
-    // In a real app, this would send data to your backend
-    // For now, we'll just show a success message
-
-    toast({
-      title: "Success",
-      description: "Flash card created successfully!",
-      variant: "default",
-    })
-
-    // Reset form
-    setFormData({
-      question: "",
-      answer: "",
-      explanation: "",
-      code: "",
-      category: "general",
-    })
+    try {
+      // Convert form data to API format with undefined for empty strings
+      const apiData: FlashCardAPI = {
+        question: formData.question,
+        answer: formData.answer,
+        category: formData.category,
+        // Convert empty strings to undefined
+        explanation: formData.explanation.trim() || undefined,
+        code: formData.code.trim() || undefined,
+        progress: formData.progress || undefined
+      };
+      
+      // Send data to the API
+      const result = await createFlashCard(apiData)
+      
+      if (result) {
+        toast({
+          title: "Success",
+          description: "Flash card created successfully!",
+          variant: "default",
+        })
+        
+        // Reset form
+        setFormData({
+          question: "",
+          answer: "",
+          explanation: "",
+          code: "",
+          category: "general",
+          progress: 0,
+        })
+        
+        // Optional: Navigate back to the main page after successful creation
+        // router.push("/")
+      } else {
+        throw new Error("Failed to create flash card")
+      }
+    } catch (error) {
+      console.error("Error creating flash card:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create flash card. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -169,8 +229,12 @@ export default function CreatePage() {
               <Button type="button" variant="outline" onClick={() => router.push("/")}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.9)]">
-                Create Flash Card
+              <Button 
+                type="submit" 
+                className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.9)]"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Creating..." : "Create Flash Card"}
               </Button>
             </CardFooter>
           </form>
@@ -180,4 +244,3 @@ export default function CreatePage() {
     </div>
   )
 }
-

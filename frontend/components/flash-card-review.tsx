@@ -170,10 +170,10 @@ export default function FlashCardReview({ flashCards, category }: FlashCardRevie
         </div>
         
         <div className="flex items-center gap-2">
-          <Button onClick={shuffleCards} size="sm" variant="outline" className="group transition-all duration-300 hover:bg-primary hover:text-primary-foreground">
-            <RotateCw className="mr-2 h-4 w-4 group-hover:rotate-180 transition-all duration-300" />
-            Shuffle
-          </Button>
+        <Button onClick={shuffleCards} size="sm" variant="outline" className="group transition-all duration-300 hover:bg-primary hover:text-primary-foreground">
+        <RotateCw className="mr-2 h-4 w-4 transition-all duration-300 transform origin-center group-hover:rotate-360" />
+        Shuffle
+</Button>
         </div>
       </div>
 
@@ -206,34 +206,39 @@ export default function FlashCardReview({ flashCards, category }: FlashCardRevie
             <Progress value={progressPercentage} className="h-2 bg-muted" />
           </div>
 
-          <div className={`perspective-1000 w-full transition-all duration-300 ${isFlipped ? 'rotate-y-180' : ''}`}>
+          {/* Card flip container - maintain perspective */}
+          <div className="perspective-1000 w-full h-full">
+            {/* Card container - handles the actual rotation */}
             <div 
-              className={`transition-all duration-200 ${getCardAnimationClass()}`}
+              className={`relative w-full h-full transition-transform duration-300 transform-style-preserve-3d ${isFlipped ? 'rotate-y-100' : ''}`}
               key={currentIndex}
             >
-              <Card className="mb-6 shadow-lg border-2 hover:border-primary/20 transition-all duration-300 overflow-hidden">
-                <CardHeader className="pb-2 border-b">
-                  <div className="flex justify-between items-center">
-                    <Badge variant="outline" className={getCategoryBadgeClass(category)}>
-                      {category}
-                    </Badge>
-                    
-                    {getCurrentCardStatus() === "completed" && (
-                      <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                        <ThumbsUp className="h-3 w-3 mr-1" /> Completed
+              {/* Front of card */}
+              <div 
+                className={`${isFlipped ? 'hidden' : 'block'} transition-all duration-200 ${getCardAnimationClass()}`}
+              >
+                <Card className="mb-6 shadow-lg border-2 hover:border-primary/20 transition-all duration-300 overflow-hidden">
+                  <CardHeader className="pb-2 border-b">
+                    <div className="flex justify-between items-center">
+                      <Badge variant="outline" className={getCategoryBadgeClass(category)}>
+                        {category}
                       </Badge>
-                    )}
-                    
-                    {getCurrentCardStatus() === "review" && (
-                      <Badge variant="outline" className="bg-amber-500 hover:bg-amber-600 text-white">
-                        <ThumbsDown className="h-3 w-3 mr-1" /> Needs Review
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="text-center py-12 px-8">
-                  {!isFlipped ? (
+                      
+                      {getCurrentCardStatus() === "completed" && (
+                        <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                          <ThumbsUp className="h-3 w-3 mr-1" /> Completed
+                        </Badge>
+                      )}
+                      
+                      {getCurrentCardStatus() === "review" && (
+                        <Badge variant="outline" className="bg-amber-500 hover:bg-amber-600 text-white">
+                          <ThumbsDown className="h-3 w-3 mr-1" /> Needs Review
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="text-center py-12 px-8">
                     <div className="min-h-52 flex flex-col justify-center">
                       <h3 className="text-2xl font-medium mb-8">{flashCards[currentIndex].question}</h3>
                       <Button onClick={() => setIsFlipped(true)} className="mx-auto w-40 transition-all duration-300 hover:scale-105">
@@ -243,7 +248,61 @@ export default function FlashCardReview({ flashCards, category }: FlashCardRevie
                         Press <kbd className="px-1 py-0.5 bg-muted rounded border">Space</kbd> to flip
                       </div>
                     </div>
-                  ) : (
+                  </CardContent>
+                  
+                  <CardFooter className="justify-between border-t pt-4 bg-muted/30">
+                    <div className="flex w-full justify-between">
+                      <Button 
+                        onClick={prevCard} 
+                        disabled={currentIndex === 0} 
+                        variant="ghost" 
+                        size="sm"
+                        className="transition-all duration-200 hover:translate-x-[-2px]"
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Previous
+                      </Button>
+                      <Button 
+                        onClick={nextCard} 
+                        disabled={currentIndex === flashCards.length - 1} 
+                        variant="ghost" 
+                        size="sm"
+                        className="transition-all duration-200 hover:translate-x-[2px]"
+                      >
+                        Next
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
+              </div>
+              
+              {/* Back of card */}
+              <div 
+                className={`${isFlipped ? 'block' : 'hidden'} transition-all duration-200 ${getCardAnimationClass()}`}
+              >
+                <Card className="mb-6 shadow-lg border-2 hover:border-primary/20 transition-all duration-300 overflow-hidden">
+                  <CardHeader className="pb-2 border-b">
+                    <div className="flex justify-between items-center">
+                      <Badge variant="outline" className={getCategoryBadgeClass(category)}>
+                        {category}
+                      </Badge>
+                      
+                      {getCurrentCardStatus() === "completed" && (
+                        <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                          <ThumbsUp className="h-3 w-3 mr-1" /> Completed
+                        </Badge>
+                      )}
+                      
+                      {getCurrentCardStatus() === "review" && (
+                        <Badge variant="outline" className="bg-amber-500 hover:bg-amber-600 text-white">
+                          <ThumbsDown className="h-3 w-3 mr-1" /> Needs Review
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="text-center py-12 px-8">
                     <div className="min-h-52 space-y-6">
                       <div>
                         <h4 className="font-medium mb-2 text-primary">Answer:</h4>
@@ -266,11 +325,9 @@ export default function FlashCardReview({ flashCards, category }: FlashCardRevie
                         </div>
                       )}
                     </div>
-                  )}
-                </CardContent>
-                
-                <CardFooter className="justify-between border-t pt-4 bg-muted/30">
-                  {isFlipped ? (
+                  </CardContent>
+                  
+                  <CardFooter className="justify-between border-t pt-4 bg-muted/30">
                     <div className="flex w-full justify-between">
                       <Button variant="ghost" size="sm" onClick={() => setIsFlipped(false)}>
                         <X className="mr-2 h-4 w-4" />
@@ -297,32 +354,9 @@ export default function FlashCardReview({ flashCards, category }: FlashCardRevie
                         </Button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex w-full justify-between">
-                      <Button 
-                        onClick={prevCard} 
-                        disabled={currentIndex === 0} 
-                        variant="ghost" 
-                        size="sm"
-                        className="transition-all duration-200 hover:translate-x-[-2px]"
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Previous
-                      </Button>
-                      <Button 
-                        onClick={nextCard} 
-                        disabled={currentIndex === flashCards.length - 1} 
-                        variant="ghost" 
-                        size="sm"
-                        className="transition-all duration-200 hover:translate-x-[2px]"
-                      >
-                        Next
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </CardFooter>
-              </Card>
+                  </CardFooter>
+                </Card>
+              </div>
             </div>
           </div>
           
@@ -342,4 +376,4 @@ export default function FlashCardReview({ flashCards, category }: FlashCardRevie
       <Toaster />
     </div>
   );
-} 
+}
