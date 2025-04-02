@@ -1,6 +1,6 @@
 import type { FlashCard } from "./types"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://devutilities.onrender.com"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://personal-flashcards.onrender.com"
 
 /**
  * Fetch all flash cards for a specific category
@@ -95,7 +95,7 @@ export async function createFlashCard(flashCard: Omit<FlashCard, "id">): Promise
  */
 export async function updateFlashCard(id: string, flashCard: Partial<FlashCard>): Promise<FlashCard | null> {
   try {
-    const response = await fetch(`${API_URL}/flashcards/${id}`, {
+    const response = await fetch(`${API_URL}/api/flashcards/update/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -119,7 +119,7 @@ export async function updateFlashCard(id: string, flashCard: Partial<FlashCard>)
  */
 export async function deleteFlashCard(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/flashcards/${id}`, {
+    const response = await fetch(`${API_URL}/api/flashcards/delete/${id}`, {
       method: "DELETE",
     })
     
