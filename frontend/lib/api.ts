@@ -51,7 +51,7 @@ export async function fetchFlashCards(category: string): Promise<FlashCard[]> {
  */
 export async function fetchAllFlashCards() {
   try {
-    const response = await fetch('http://localhost:8000/api/flashcards');
+    const response = await fetch('https://personal-flashcards.onrender.com/api/flashcards');
     if (!response.ok) {
       throw new Error(`Error fetching all flash cards: ${response.statusText}`);
     }
